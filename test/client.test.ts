@@ -72,6 +72,19 @@ test('token is cached across requests', async () => {
   assert.equal(tokens.length, 1);
 });
 
+test('concurrent requests share one token fetch', async () => {
+  const { client, tokens } = setup([ok({})]);
+  await Promise.all([client.getCustomerInfo(), client.getOfferings()]);
+  assert.equal(tokens.length, 1);
+});
+
+test('concurrent TOKEN_INVALID causes one refresh', async () => {
+  const { client, calls, tokens } = setup([tokenInvalid, tokenInvalid, ok({}), ok({})]);
+  await Promise.all([client.getCustomerInfo(), client.getOfferings()]);
+  assert.equal(tokens.length, 2);
+  assert.equal(calls.length, 4);
+});
+
 test('TOKEN_INVALID fetches a new token and retries once', async () => {
   const { client, calls, tokens } = setup([tokenInvalid, ok({ external_customer_id: 'c1' })]);
   assert.deepEqual(await client.getCustomerInfo(), { external_customer_id: 'c1' });

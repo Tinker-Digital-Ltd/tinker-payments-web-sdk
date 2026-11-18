@@ -85,6 +85,7 @@ export interface CustomerOfferings {
     metadata: JsonObject | null;
     packages: { identifier: string; billing_period: string | null; product: Product }[];
   }[];
+  experiment: { id: string; variant: 'control' | 'treatment' } | null;
 }
 
 export type CustomerAttributes = Record<string, string | null>;

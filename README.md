@@ -38,6 +38,8 @@ const { current_offering_id, offerings } = await tinker.getOfferings();
 await tinker.setAttributes({ plan_hint: 'annual', old_key: null });
 ```
 
+`getCustomerInfo` returns 404 `CUSTOMER_NOT_FOUND` for a customer with no purchases, promotions or attributes yet.
+
 Errors are `errors.ApiError` (with `errorCode`, `status`, `requestId`), `errors.FeatureNotSupportedError` or `errors.NetworkError`, matching the server SDKs.
 
 ## Purchases

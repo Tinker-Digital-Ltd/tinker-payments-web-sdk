@@ -18,6 +18,7 @@ export default class TinkerClient {
   private readonly getCustomerToken: () => Promise<string>;
   private readonly fetchImpl: TinkerFetch;
   private token: string | null = null;
+  private pending: Promise<string> | null = null;
 
   constructor(options: TinkerClientOptions) {
     this.publicKey = options.publicKey;
@@ -46,28 +47,44 @@ export default class TinkerClient {
     return this.request<CustomerInfo>('POST', 'client/attributes', { attributes });
   }
 
-  private async request<T>(method: string, path: string, data?: unknown): Promise<T> {
+  private async currentToken(): Promise<string> {
+    if (this.token) {
+      return this.token;
+    }
     try {
-      return await this.send<T>(method, path, data, false);
+      this.pending ??= this.getCustomerToken()
+        .then((token) => (this.token = token))
+        .finally(() => {
+          this.pending = null;
+        });
+      return await this.pending;
     } catch (error) {
-      if (!(error instanceof ApiError) || error.errorCode !== 'TOKEN_INVALID') {
-        throw error;
-      }
-      return await this.send<T>(method, path, data, true);
+      throw new NetworkError(`Failed to communicate with Tinker API: ${errorMessage(error)}`, error);
     }
   }
 
-  private async send<T>(method: string, path: string, data: unknown, refreshToken: boolean): Promise<T> {
+  private async request<T>(method: string, path: string, data?: unknown): Promise<T> {
+    const token = await this.currentToken();
     try {
-      if (!this.token || refreshToken) {
-        this.token = await this.getCustomerToken();
+      return await this.send<T>(method, path, data, token);
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 401 || error.errorCode !== 'TOKEN_INVALID') {
+        throw error;
       }
+      if (this.token === token) {
+        this.token = null;
+      }
+      return await this.send<T>(method, path, data, await this.currentToken());
+    }
+  }
 
+  private async send<T>(method: string, path: string, data: unknown, token: string): Promise<T> {
+    try {
       const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
         method,
         headers: {
           'X-Public-Key': this.publicKey,
-          Authorization: `Bearer ${this.token}`,
+          Authorization: `Bearer ${token}`,
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
