@@ -78,7 +78,7 @@ export interface Product {
 }
 
 export interface CustomerOfferings {
-  current_offering_id: string | null;
+  current_offering_identifier: string | null;
   offerings: {
     identifier: string;
     display_name: string;

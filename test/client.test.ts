@@ -51,7 +51,7 @@ test('getEntitlement escapes the identifier and isEntitled uses is_active', asyn
 });
 
 test('getOfferings returns the offerings', async () => {
-  const offerings = { current_offering_id: 'default', offerings: [] };
+  const offerings = { current_offering_identifier: 'default', offerings: [] };
   const { client, calls } = setup([ok(offerings)]);
   assert.deepEqual(await client.getOfferings(), offerings);
   assert.equal(calls[0].url, 'https://api.tinkerpayments.com/v1/client/offerings');
@@ -129,4 +129,10 @@ test('baseUrl override gets /v1 appended once', async () => {
   const b = setup([ok({})], 'pk_live_abc', 'http://localhost:8080/v1');
   await b.client.getOfferings();
   assert.equal(b.calls[0].url, 'http://localhost:8080/v1/client/offerings');
+});
+
+test('empty customer token and non-pk_ public key are rejected', async () => {
+  const client = new TinkerClient({ publicKey: 'pk_live_abc', getCustomerToken: async () => '', fetch: async () => new Response('{}') });
+  await assert.rejects(client.getCustomerInfo(), errors.TinkerError);
+  assert.throws(() => new TinkerClient({ publicKey: 'sk_live_abc', getCustomerToken: async () => 't' }), errors.TinkerError);
 });

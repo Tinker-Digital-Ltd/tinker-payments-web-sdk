@@ -33,7 +33,7 @@ const info = await tinker.getCustomerInfo();
 const entitlement = await tinker.getEntitlement('pro');
 const hasPro = await tinker.isEntitled('pro');
 
-const { current_offering_id, offerings } = await tinker.getOfferings();
+const { current_offering_identifier, offerings } = await tinker.getOfferings();
 
 await tinker.setAttributes({ plan_hint: 'annual', old_key: null });
 ```

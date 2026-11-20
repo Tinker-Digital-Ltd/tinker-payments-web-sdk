@@ -1,4 +1,4 @@
-import { ApiError, NetworkError, apiError } from './errors';
+import { ApiError, NetworkError, TinkerError, apiError } from './errors';
 import { resolveBaseUrl } from './config';
 import {
   errorMessage,
@@ -21,6 +21,9 @@ export default class TinkerClient {
   private pending: Promise<string> | null = null;
 
   constructor(options: TinkerClientOptions) {
+    if (!options.publicKey.startsWith('pk_')) {
+      throw new TinkerError('publicKey must start with pk_', 'INVALID_PUBLIC_KEY');
+    }
     this.publicKey = options.publicKey;
     this.baseUrl = resolveBaseUrl(options.publicKey, options.baseUrl);
     this.getCustomerToken = options.getCustomerToken;
@@ -53,7 +56,12 @@ export default class TinkerClient {
     }
     try {
       this.pending ??= this.getCustomerToken()
-        .then((token) => (this.token = token))
+        .then((token) => {
+          if (!token) {
+            throw new TinkerError('Customer token must not be empty', 'INVALID_TOKEN');
+          }
+          return (this.token = token);
+        })
         .finally(() => {
           this.pending = null;
         });
