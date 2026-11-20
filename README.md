@@ -40,11 +40,22 @@ await tinker.setAttributes({ plan_hint: 'annual', old_key: null });
 
 `getCustomerInfo` returns 404 `CUSTOMER_NOT_FOUND` for a customer with no purchases, promotions or attributes yet.
 
+`setAttributes` rejects keys starting with `$` with 403 `RESERVED_ATTRIBUTE`; those are set from the server only.
+
 Errors are `errors.ApiError` (with `errorCode`, `status`, `requestId`), `errors.FeatureNotSupportedError` or `errors.NetworkError`, matching the server SDKs.
 
 ## Purchases
 
 Purchases are started from your backend with the server SDK's payment initiate, using `productId`, `externalCustomerId` and `presentedOfferingId`.
+
+## Hosted paywall
+
+```ts
+const url = await tinker.paywallUrl({ returnUrl: 'https://app.example.com/after-purchase', offering: 'default' });
+window.location.assign(url);
+```
+
+The URL carries `pk`, the current customer token, `return_url` and the optional `offering` (omit it for the current offering), all URL-encoded. `returnUrl` must be `https`, or `http://localhost`. The customer comes back to `returnUrl` with `package`, `offering`, `product_id` and `billing_period` appended. Pass `paywallBaseUrl` to override the site origin (default `https://tinkerpayments.com`, path `/paywall`).
 
 ## Options
 

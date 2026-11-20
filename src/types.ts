@@ -18,7 +18,13 @@ export interface TinkerClientOptions {
   publicKey: string;
   getCustomerToken: () => Promise<string>;
   baseUrl?: string | null;
+  paywallBaseUrl?: string | null;
   fetch?: TinkerFetch;
+}
+
+export interface PaywallUrlOptions {
+  returnUrl: string;
+  offering?: string;
 }
 
 export interface ApiEnvelope {

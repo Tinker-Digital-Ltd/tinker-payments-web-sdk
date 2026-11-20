@@ -1,5 +1,6 @@
 export const PRODUCTION_BASE_URL = 'https://api.tinkerpayments.com';
 export const SANDBOX_BASE_URL = 'https://sandbox-api.tinkerpayments.com';
+export const PAYWALL_BASE_URL = 'https://tinkerpayments.com';
 const API_VERSION_PATH = '/v1';
 
 export function resolveBaseUrl(publicKey: string, baseUrl?: string | null): string {
@@ -9,4 +10,9 @@ export function resolveBaseUrl(publicKey: string, baseUrl?: string | null): stri
     url += API_VERSION_PATH;
   }
   return `${url}/`;
+}
+
+export function resolvePaywallUrl(paywallBaseUrl?: string | null): string {
+  const url = paywallBaseUrl && paywallBaseUrl.trim() ? paywallBaseUrl : PAYWALL_BASE_URL;
+  return `${url.replace(/\/+$/, '')}/paywall`;
 }

@@ -65,6 +65,22 @@ test('setAttributes posts the attributes', async () => {
   assert.deepEqual(calls[0].body, { attributes: { plan: 'x', old: null } });
 });
 
+test('paywallUrl encodes the hosted paywall parameters and honours paywallBaseUrl', async () => {
+  const { client, calls } = setup([]);
+  const url = new URL(await client.paywallUrl({ returnUrl: 'https://app.test/back?a=1&b=2', offering: 'big deal' }));
+  assert.equal(url.origin + url.pathname, 'https://tinkerpayments.com/paywall');
+  assert.deepEqual(Object.fromEntries(url.searchParams), {
+    pk: 'pk_live_abc',
+    token: 'token1',
+    return_url: 'https://app.test/back?a=1&b=2',
+    offering: 'big deal'
+  });
+  assert.equal(calls.length, 0);
+  assert.ok(!new URL(await client.paywallUrl({ returnUrl: 'https://app.test' })).searchParams.has('offering'));
+  const custom = new TinkerClient({ publicKey: 'pk_live_abc', paywallBaseUrl: 'http://localhost:3000/', getCustomerToken: async () => 't' });
+  assert.ok((await custom.paywallUrl({ returnUrl: 'http://localhost:5173' })).startsWith('http://localhost:3000/paywall?pk=pk_live_abc&token=t&return_url=http%3A%2F%2Flocalhost%3A5173'));
+});
+
 test('token is cached across requests', async () => {
   const { client, tokens } = setup([ok({})]);
   await client.getCustomerInfo();

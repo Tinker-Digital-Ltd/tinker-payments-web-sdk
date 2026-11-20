@@ -1,5 +1,5 @@
 import { ApiError, NetworkError, TinkerError, apiError } from './errors';
-import { resolveBaseUrl } from './config';
+import { resolveBaseUrl, resolvePaywallUrl } from './config';
 import {
   errorMessage,
   isJsonObject,
@@ -8,6 +8,7 @@ import {
   type CustomerInfo,
   type CustomerOfferings,
   type EntitlementStatus,
+  type PaywallUrlOptions,
   type TinkerClientOptions,
   type TinkerFetch
 } from './types';
@@ -15,6 +16,7 @@ import {
 export default class TinkerClient {
   private readonly publicKey: string;
   private readonly baseUrl: string;
+  private readonly paywallUrlBase: string;
   private readonly getCustomerToken: () => Promise<string>;
   private readonly fetchImpl: TinkerFetch;
   private token: string | null = null;
@@ -26,6 +28,7 @@ export default class TinkerClient {
     }
     this.publicKey = options.publicKey;
     this.baseUrl = resolveBaseUrl(options.publicKey, options.baseUrl);
+    this.paywallUrlBase = resolvePaywallUrl(options.paywallBaseUrl);
     this.getCustomerToken = options.getCustomerToken;
     this.fetchImpl = options.fetch ?? ((url, init) => fetch(url, init));
   }
@@ -48,6 +51,17 @@ export default class TinkerClient {
 
   setAttributes(attributes: CustomerAttributes): Promise<CustomerInfo> {
     return this.request<CustomerInfo>('POST', 'client/attributes', { attributes });
+  }
+
+  async paywallUrl({ returnUrl, offering }: PaywallUrlOptions): Promise<string> {
+    const url = new URL(this.paywallUrlBase);
+    url.searchParams.set('pk', this.publicKey);
+    url.searchParams.set('token', await this.currentToken());
+    url.searchParams.set('return_url', returnUrl);
+    if (offering) {
+      url.searchParams.set('offering', offering);
+    }
+    return url.toString();
   }
 
   private async currentToken(): Promise<string> {
